@@ -278,16 +278,16 @@ def deviceStr():
 
 def print_urb(urb):
     # unique per transaction, not packet
-    print("URB id: %s" % (urb_id_str(urb.id)))
-    print(" pcap_hdr_len: %s" % (urb.pcap_hdr_len, ))
-    print(" irp_status: %s" % (urb.irp_status, ))
-    print(" usb_func: %s" % (func_str(urb.usb_func), ))
-    print(" irp_info: %s" % (irp_info_str(urb.irp_info), ))
-    print(" bus_id: %s" % (urb.bus_id, ))
-    print(" device: %s" % (urb.device, ))
+    print(f"URB id: {urb_id_str(urb.id)}")
+    print(f" pcap_hdr_len: {urb.pcap_hdr_len}")
+    print(f" irp_status: {urb.irp_status}")
+    print(f" usb_func: {func_str(urb.usb_func)}")
+    print(f" irp_info: {irp_info_str(urb.irp_info)}")
+    print(f" bus_id: {urb.bus_id}")
+    print(f" device: {urb.device}")
     print(" endpoint: 0x%02X" % (urb.endpoint, ))
-    print(" transfer_type: %s" % (urb.transfer_type, ))
-    print(" data_length: %s" % (urb.data_length, ))
+    print(f" transfer_type: {urb.transfer_type}")
+    print(f" data_length: {urb.data_length}")
 
 
 def urb_add_str(urb):
@@ -299,11 +299,7 @@ def urb_add_str(urb):
 
 
 def urb2json(urb):
-    j = dict(urb._asdict())
-    #j["ctrlrequest"] = binascii.hexlify(j["ctrlrequest"])
-    # j["data"] = binascii.hexlify(j["data"])
-    #j["t"] = j['sec'] + j['usec'] / 1e6
-    return j
+    return dict(urb._asdict())
 
 
 def urb_error(urb):
@@ -351,7 +347,7 @@ class Gen(PcapGen):
         return "windows"
 
     def bad_packet(self, packet, msg):
-        msg = "Packet %s: %s" % (self.pktn_str(), msg)
+        msg = f"Packet {self.pktn_str()}: {msg}"
 
         self.errors += 1
         if self.arg_halt:
@@ -369,16 +365,13 @@ class Gen(PcapGen):
             self.processBulkSubmit(dat_cur)
         elif self.urb.transfer_type == URB_INTERRUPT:
             self.processGenericSubmit(dat_cur)
-            self.printv('Added pending interrupt URB %s' % self.urb.id)
-        # Pipe stall magic
-        # FDO2PDO w/ URB_TRANSFER_IN
-        # https://github.com/JohnDMcMaster/usbrply/issues/71
+            self.printv(f'Added pending interrupt URB {self.urb.id}')
         elif self.urb.transfer_type == USB_IRP_INFO:
             self.processGenericSubmit(dat_cur)
-            self.printv('Added pending IRP info URB %s' % self.urb.id)
+            self.printv(f'Added pending IRP info URB {self.urb.id}')
         elif func_str(self.urb.usb_func) == "ABORT_PIPE":
             self.processGenericSubmit(dat_cur)
-            self.printv('Added pending IRP info URB %s' % self.urb.id)
+            self.printv(f'Added pending IRP info URB {self.urb.id}')
         else:
             self.processGenericSubmit(dat_cur)
             self.gwarning("packet %s: unhandled transfer_type 0x%02X" %
@@ -413,7 +406,7 @@ class Gen(PcapGen):
                 print("")
                 print("")
                 print("")
-                print('WIN PACKET %s' % (self.cur_packn, ))
+                print(f'WIN PACKET {self.cur_packn}')
 
             if caplen != len(packet):
                 self.gwarning("packet %s: malformed, caplen %d != len %d",
@@ -423,7 +416,7 @@ class Gen(PcapGen):
                 hexdump(packet)
                 print('Pending (%d):' % (len(self.pending_complete), ))
                 for k in self.pending_complete:
-                    print('  %s' % (urb_id_str(k), ))
+                    print(f'  {urb_id_str(k)}')
 
             self.printv("Length %u" % (len(packet), ))
             if len(packet) < usb_urb_sz:
@@ -434,12 +427,11 @@ class Gen(PcapGen):
 
             # caplen is actual length, len is reported
             self.urb_raw = packet
-            self.urb = usb_urb(packet[0:usb_urb_sz])
+            self.urb = usb_urb(packet[:usb_urb_sz])
             self.urbts = ts
             dat_cur = packet[usb_urb_sz:]
 
-            self.printv('ID %s, %s post-urb bytes' %
-                        (urb_id_str(self.urb.id), len(dat_cur)))
+            self.printv(f'ID {urb_id_str(self.urb.id)}, {len(dat_cur)} post-urb bytes')
 
             # Main packet filtering
             # Drop if not specified device
@@ -496,14 +488,12 @@ class Gen(PcapGen):
             # Complete?
             # May be "out" or "status"
             if self.urb.irp_info & 1 == INFO_PDO2FDO:
-                if not self.urb.id in self.pending_complete:
-                    if self.urb.transfer_type != URB_INTERRUPT:
-                        self.gwarning(
-                            "Packet %s missing submit.  URB ID: 0x%016lX" %
-                            (self.pktn_str(), self.urb.id))
-                else:
+                if self.urb.id in self.pending_complete:
                     self.process_complete(dat_cur)
-            # Otherwise submit
+                elif self.urb.transfer_type != URB_INTERRUPT:
+                    self.gwarning(
+                        "Packet %s missing submit.  URB ID: 0x%016lX" %
+                        (self.pktn_str(), self.urb.id))
             else:
                 self.process_submit(dat_cur)
 
@@ -512,21 +502,18 @@ class Gen(PcapGen):
             self.submit = None
             self.urb = None
         except:
-            print('ERROR: packet %s' % self.pktn_str())
+            print(f'ERROR: packet {self.pktn_str()}')
             raise
 
     def pktn_str(self):
-        if self.arg_rel_pkt:
-            return self.rel_pkt
-        else:
-            return self.cur_packn
+        return self.rel_pkt if self.arg_rel_pkt else self.cur_packn
 
     def process_complete(self, dat_cur):
         self.printv("process_complete")
         self.submit = self.pending_complete[self.urb.id]
         # Done with it, get rid of it
         del self.pending_complete[self.urb.id]
-        self.printv("Matched submit packet %s" % self.submit.packet_number)
+        self.printv(f"Matched submit packet {self.submit.packet_number}")
 
         # Discarded?
         if self.submit is None:
@@ -578,7 +565,7 @@ class Gen(PcapGen):
         #self.printv('ctrlrequest: %d' % (len(self.urb.ctrlrequest)))
         # Skip xfer_stage
         dat_cur = dat_cur[1:]
-        ctrl = usb_ctrlrequest(dat_cur[0:usb_ctrlrequest_sz])
+        ctrl = usb_ctrlrequest(dat_cur[:usb_ctrlrequest_sz])
         dat_cur = dat_cur[usb_ctrlrequest_sz:]
 
         if self.verbose:
@@ -692,21 +679,14 @@ class Gen(PcapGen):
 
         pending.packet_number = self.pktn_str()
         self.pending_complete[self.urb.id] = pending
-        self.printv('Added pending bulk URB %s' % self.urb.id)
+        self.printv(f'Added pending bulk URB {self.urb.id}')
 
     def processBulkCompleteIn(self, dat_cur):
         # looks like maybe windows doesn't report the request size?
         # think this is always 0
         assert self.submit.urb.data_length == 0
 
-        # FIXME: this is a messy conversion artifact from the C code
-        # Is it legal to have a 0 length bulk in?
-        data_size = 0
-        # instead, use the recieved buffer size as a best estimated
-        max_payload_sz = len(dat_cur)
-        if max_payload_sz:
-            data_size = max_payload_sz
-
+        data_size = max_payload_sz if (max_payload_sz := len(dat_cur)) else 0
         # output below
         self.output_packet({
             'type': 'bulkRead',
@@ -747,14 +727,7 @@ class Gen(PcapGen):
         # think this is always 0
         assert self.submit.urb.data_length == 0
 
-        # FIXME: this is a messy conversion artifact from the C code
-        # Is it legal to have a 0 length bulk in?
-        data_size = 0
-        # instead, use the recieved buffer size as a best estimate
-        max_payload_sz = len(dat_cur)
-        if max_payload_sz:
-            data_size = max_payload_sz
-
+        data_size = max_payload_sz if (max_payload_sz := len(dat_cur)) else 0
         self.output_packet({
             'type': 'interruptOut',
             'endp': self.submit.urb.endpoint,
@@ -767,14 +740,7 @@ class Gen(PcapGen):
         # think this is always 0
         assert self.submit.urb.data_length == 0
 
-        # FIXME: this is a messy conversion artifact from the C code
-        # Is it legal to have a 0 length bulk in?
-        data_size = 0
-        # instead, use the recieved buffer size as a best estimate
-        max_payload_sz = len(dat_cur)
-        if max_payload_sz:
-            data_size = max_payload_sz
-
+        data_size = max_payload_sz if (max_payload_sz := len(dat_cur)) else 0
         # output below
         self.output_packet({
             'type': 'interruptIn',
@@ -811,6 +777,6 @@ class Gen(PcapGen):
 
         # caplen is actual length, len is reported
         self.urb_raw = packet
-        self.urb = usb_urb(packet[0:usb_urb_sz])
+        self.urb = usb_urb(packet[:usb_urb_sz])
 
         self.arg_device = max(self.arg_device, self.urb.device)

@@ -6,23 +6,14 @@ from .util import hexdump
 
 def default_arg(argsj, k, default):
     val = argsj.get(k)
-    if val is None:
-        return default
-    else:
-        return val
+    return default if val is None else val
 
 
 def format_vidpid(vid, pid):
     def fmt(x):
-        if x is None:
-            return "None"
-        else:
-            return "%04x" % x
+        return "None" if x is None else "%04x" % x
 
-    if vid is None and pid is None:
-        return "None"
-    else:
-        return "%s:%s" % (fmt(vid), fmt(pid))
+    return "None" if vid is None and pid is None else f"{fmt(vid)}:{fmt(pid)}"
 
 
 class VidpidFilter(object):
@@ -103,30 +94,28 @@ class VidpidFilter(object):
         }
 
     def gen_data(self, datas):
-        self.verbose and print("vidpid: want %s" %
-                               (format_vidpid(self.arg_vid, self.arg_pid)))
+        self.verbose and print(
+            f"vidpid: want {format_vidpid(self.arg_vid, self.arg_pid)}"
+        )
         for data in datas:
             self.entries += 1
             should_filter, yields = self.should_filter(data)
-            for y in yields:
-                yield y
+            yield from yields
             if should_filter:
                 self.verbose and print(
                     "VidpidFilter drop %s (%s %s %s)" %
                     (data['type'], req2s(data["bRequestType"],
                                          data["bRequest"]),
                      data["bRequestType"], data["bRequest"]))
-                self.verbose and print(
-                    "VidpidFilter drop device %s" % data.get('device'))
+                self.verbose and print(f"VidpidFilter drop device {data.get('device')}")
                 self.drops += 1
                 continue
             else:
-                self.verbose and print(
-                    "VidpidFilter keep device %s" % data.get('device'))
+                self.verbose and print(f"VidpidFilter keep device {data.get('device')}")
                 yield data
-        yield self.comment("VidpidFilter: dropped %s / %s entries, want %s" %
-                           (self.drops, self.entries,
-                            format_vidpid(self.arg_vid, self.arg_pid)))
+        yield self.comment(
+            f"VidpidFilter: dropped {self.drops} / {self.entries} entries, want {format_vidpid(self.arg_vid, self.arg_pid)}"
+        )
 
     def run(self, jgen):
         for k, v in jgen:

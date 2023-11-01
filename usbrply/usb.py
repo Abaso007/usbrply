@@ -98,20 +98,15 @@ def req2s(bRequestType, bRequest, vendor=None):
 
     reqType = bRequestType & USB_TYPE_MASK
     n = m.get(reqType, None)
-    if n is None or not bRequest in n:
-        return None
-    reqs = n[bRequest]
-    return reqs
+    return None if n is None or bRequest not in n else n[bRequest]
 
 
 def request_type2str(bRequestType):
-    ret = ""
-
-    if (bRequestType & USB_DIR_IN) == USB_DIR_IN:
-        ret += "USB_DIR_IN"
-    else:
-        ret += "USB_DIR_OUT"
-
+    ret = "" + (
+        "USB_DIR_IN"
+        if (bRequestType & USB_DIR_IN) == USB_DIR_IN
+        else "USB_DIR_OUT"
+    )
     m = {
         USB_TYPE_STANDARD: " | USB_TYPE_STANDARD",
         USB_TYPE_CLASS: " | USB_TYPE_CLASS",

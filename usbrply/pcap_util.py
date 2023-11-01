@@ -29,9 +29,7 @@ def guess_linux(buff):
     0x1C:0x1F (urb status): 0 => success, almost always
         windows: 
     """
-    if len(buff) < 0x30:
-        return False
-    return sum(buff[0x1C:0x20]) == 0
+    return False if len(buff) < 0x30 else sum(buff[0x1C:0x20]) == 0
 
 
 def guess_windows(buff):
@@ -41,9 +39,7 @@ def guess_windows(buff):
         linux: endpoint, device, bus id. Unlikely to be 0
     0x10 (IRP information): either 0 or 1
     """
-    if len(buff) < 0x24:
-        return False
-    return sum(buff[0x0A:0x0E]) == 0
+    return False if len(buff) < 0x24 else sum(buff[0x0A:0x0E]) == 0
 
 
 class PcapParser(object):
@@ -57,19 +53,15 @@ class PcapParser(object):
         self.use_pcapng = use_pcapng
         if self.use_pcapng is None:
             # User higher performance library if available
-            self.use_pcapng = False if pcap else True
-        # self.pcapng = "pcapng" in argsj["parser"]
+            self.use_pcapng = not pcap
         if self.use_pcapng:
             assert pcapng, "pcapng library requested but no pcapng library"
-        else:
-            assert pcap, "pcap library requested but no pcap library"
-
-        # Initialize library
-        if self.use_pcapng:
             self.fp = open(fn, 'rb')
             self.scanner = pcapng.FileScanner(self.fp)
             self.scanner_iter = self.scanner.__iter__()
         else:
+            assert pcap, "pcap library requested but no pcap library"
+
             self.pcap = pcap.pcapObject()
             self.pcap.open_offline(fn)
 
@@ -136,7 +128,7 @@ def guess_parser_pcapng(fn):
         elif "Windows" in os:
             return "Windows"
         else:
-            assert 0, "unexpected os %s" % (os, )
+            assert 0, f"unexpected os {os}"
 
 
 def guess_parser(fn):
@@ -144,15 +136,9 @@ def guess_parser(fn):
     pcapng_guess = guess_parser_pcapng(fn)
     if pcapng_guess is not None:
         if pcapng_guess == "Windows":
-            if pcap:
-                return "win-pcap"
-            else:
-                return "win-pcapng"
+            return "win-pcap" if pcap else "win-pcapng"
         elif pcapng_guess == "Linux":
-            if pcap:
-                return "lin-pcap"
-            else:
-                return "lin-pcapng"
+            return "lin-pcap" if pcap else "lin-pcapng"
         else:
             assert 0
     else:
@@ -178,14 +164,8 @@ def guess_parser(fn):
 
     if windows:
         assert linux == 0
-        if parser.use_pcapng:
-            return "win-pcapng"
-        else:
-            return "win-pcap"
+        return "win-pcapng" if parser.use_pcapng else "win-pcap"
     if linux:
         assert windows == 0
-        if parser.use_pcapng:
-            return "lin-pcapng"
-        else:
-            return "lin-pcap"
+        return "lin-pcapng" if parser.use_pcapng else "lin-pcap"
     assert 0, "failed to identify packet format"

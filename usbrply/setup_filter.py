@@ -33,18 +33,15 @@ class SetupFilter(object):
             if data["type"] in ("controlWrite",
                                 "controlRead") and self.should_filter(data):
                 if self.verbose:
-                    print("SetupFilter drop %s (%s %s %s)" %
-                          (data['type'],
-                           req2s(data["bRequestType"], data["bRequest"]),
-                           data["bRequestType"], data["bRequest"]))
+                    print(
+                        f"""SetupFilter drop {data['type']} ({req2s(data["bRequestType"], data["bRequest"])} {data["bRequestType"]} {data["bRequest"]})"""
+                    )
                 self.drops += 1
                 continue
             yield data
         yield {
-            "type":
-            "comment",
-            "v":
-            "SetupFilter: dropped %s / %s entries" % (self.drops, self.entries)
+            "type": "comment",
+            "v": f"SetupFilter: dropped {self.drops} / {self.entries} entries",
         }
 
     def run(self, jgen):

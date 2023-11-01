@@ -18,14 +18,8 @@ def munge_argsj(args):
 
     if args.range:
         (min_packet, max_packet) = args.range.split(':')
-        if len(min_packet) == 0:
-            min_packet = 0
-        else:
-            min_packet = int(min_packet, 0)
-        if len(max_packet) == 0:
-            max_packet = float('inf')
-        else:
-            max_packet = int(max_packet, 0)
+        min_packet = 0 if len(min_packet) == 0 else int(min_packet, 0)
+        max_packet = float('inf') if len(max_packet) == 0 else int(max_packet, 0)
         argsj['min_packet'] = min_packet
         argsj['max_packet'] = max_packet
 
@@ -127,8 +121,7 @@ def main():
     argsj = munge_argsj(args)
 
     parsed = usbrply.parsers.pcap2json(args.fin, argsj)
-    filters = []
-    filters.append("vidpid")
+    filters = ["vidpid"]
     if not args.setup:
         filters.append("setup")
     if args.comment or args.fx2:

@@ -42,7 +42,7 @@ def indent_dec():
 
 
 def indented(s):
-    print("%s%s" % (indent, s), file=print_file)
+    print(f"{indent}{s}", file=print_file)
 
 
 def get_indent():

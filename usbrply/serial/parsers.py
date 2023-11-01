@@ -44,10 +44,7 @@ def interface_i2str(i):
 
 
 def flags2dict(s2i, vali):
-    ret = {}
-    for k, v in s2i.items():
-        ret[k] = bool(vali & v)
-    return ret
+    return {k: bool(vali & v) for k, v in s2i.items()}
 
 
 """
@@ -142,9 +139,8 @@ class FT2232CParser:
                 'ERR': bool(buff[0] & 0x80),
             }
         else:
-            j = {}
-            j["type"] = request
-            self.verbose and print("%s: FIXME" % (request, ))
+            j = {"type": request}
+            self.verbose and print(f"{request}: FIXME")
 
         j["type"] = request
         j['rw'] = 'r'
@@ -267,7 +263,7 @@ class FT2232CParser:
 
         def DEFAULT(d):
             j = {}
-            self.verbose and print("%s: FIXME" % (request, ))
+            self.verbose and print(f"{request}: FIXME")
             return j
 
         j = {
@@ -317,7 +313,7 @@ class FT2232CParser:
             self.passthrough_jdata(d)
             return
 
-        prefix = data[0:2]
+        prefix = data[:2]
         data = data[2:]
         # meh lots of these and not sure what they mean
         # should look into these but just ignore for now
@@ -340,10 +336,7 @@ class FT2232CParser:
     def run(self, j):
         self.header()
 
-        for di, d in enumerate(j["data"]):
-            if 0 and di > 500:
-                print("debug break")
-                break
+        for d in j["data"]:
             if d["type"] == "bulkWrite":
                 self.handleBulkWrite(d)
             elif d["type"] == "bulkRead":

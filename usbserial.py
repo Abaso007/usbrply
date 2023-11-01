@@ -130,8 +130,7 @@ def main():
     gen = usbrply.parsers.pcap2json_prepare(args.fin, argsj)
     parsed = gen.run()
     # HACK: get from json output
-    filters = []
-    filters.append("vidpid")
+    filters = ["vidpid"]
     if not args.setup:
         filters.append("setup")
     if args.comment or args.fx2:
