@@ -21,10 +21,10 @@ def str2hex(buff, prefix='', terse=True):
             if len(buff) <= 16:
                 ret += '"'
             if not terse or len(buff) > 16:
-                ret += '%s"' % prefix
+                ret += f'{prefix}"'
 
         ret += "\\x%02X" % (buff[i], )
-    return ret + '"'
+    return f'{ret}"'
 
 
 def fmt_terse(data):
@@ -36,9 +36,8 @@ def fmt_terse(data):
 
 def dump(fin):
     j = json.load(open(fin))
-    pi = 0
     ps = j['data']
-    while pi < len(ps):
+    for pi in range(len(ps)):
         p = ps[pi]
         if p['type'] == 'comment':
             #print '# %s' % p['v']
@@ -84,8 +83,7 @@ def dump(fin):
             print('bulkWrite(0x%02X, %s)' %
                   (p['endp'], str2hex(data, prefix=' ' * 8)))
         else:
-            raise Exception("Unknown type: %s" % p['type'])
-        pi += 1
+            raise Exception(f"Unknown type: {p['type']}")
 
 
 if __name__ == "__main__":

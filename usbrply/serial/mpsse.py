@@ -130,7 +130,7 @@ class MPSSEParser:
         buff = bytearray(binascii.unhexlify(d['data']))
         if buff[0] == BAD_COMMAND:
             which = mpsse_cmd_i2s.get(buff[1], None)
-            print("read invalid: %s" % which)
+            print(f"read invalid: {which}")
         else:
             print("read 0x%02X" % (buff[0], ))
 
@@ -141,7 +141,7 @@ class MPSSEParser:
         print(cmd)
 
     def run(self, j):
-        for di, d in enumerate(j["data"]):
+        for d in j["data"]:
             print("")
             print(d)
             if d['type'] == 'read':
@@ -149,12 +149,11 @@ class MPSSEParser:
             elif d['type'] == 'write':
                 self.handleWrite(d)
             else:
-                print('fixme: %s' % d['type'])
+                print(f"fixme: {d['type']}")
 
-        jret = {
+        return {
             "data": self.jo,
         }
-        return jret
 
 
 class MPSSETextPrinter:

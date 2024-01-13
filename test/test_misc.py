@@ -24,12 +24,7 @@ def printj(j):
 
 def find_packets(j):
     """Return non-comment packets in json"""
-    ret = []
-    for packet in j["data"]:
-        if packet["type"] == "comment":
-            continue
-        ret.append(packet)
-    return ret
+    return [packet for packet in j["data"] if packet["type"] != "comment"]
 
 
 def find_packet(j):
@@ -56,7 +51,7 @@ class TestCommon(unittest.TestCase):
         print("")
         print("")
         print("")
-        print("Start " + self._testMethodName)
+        print(f"Start {self._testMethodName}")
         self.verbose = os.getenv("VERBOSE", "N") == "Y"
         printer.print_file = open("/dev/null", "w")
         self.argsj = {"verbose": self.verbose}
@@ -79,11 +74,6 @@ class TestCore(TestCommon):
         usbrply.printers.run("libusb-py",
                              usbrply.parsers.pcap2json(fn, argsj=self.argsj),
                              argsj=self.argsj)
-        if 0:
-            usbrply.printers.run("libusb-c",
-                                 usbrply.parsers.pcap2json(fn,
-                                                           argsj=self.argsj),
-                                 argsj=self.argsj)
         return j
 
     """
@@ -124,7 +114,7 @@ class TestCore(TestCommon):
             filtered = filters.run(["vidpid"], parsed, self.argsj)
             usbrply.printers.run("libusb-py", filtered, argsj=self.argsj)
 
-        subprocess.check_call("python3 %s -h >/dev/null" % fn, shell=True)
+        subprocess.check_call(f"python3 {fn} -h >/dev/null", shell=True)
 
     def test_pyprinter_win(self):
         usbrply.printers.run(
@@ -146,7 +136,7 @@ class TestCore(TestCommon):
             filtered = filters.run(["vidpid"], parsed, self.argsj)
             usbrply.printers.run("libusb-py", filtered, argsj=self.argsj)
 
-        subprocess.check_call("python3 %s -h >/dev/null" % fn, shell=True)
+        subprocess.check_call(f"python3 {fn} -h >/dev/null", shell=True)
 
     """
     *************************************************************************
@@ -177,9 +167,9 @@ class TestCore(TestCommon):
 
         if os.getenv("USBRPLY_TEST_ALL") == "Y":
             subprocess.check_call(
-                "gcc -I/usr/include/libusb-1.0 %s -lusb-1.0 -o %s.out >/dev/null"
-                % (fn, fn),
-                shell=True)
+                f"gcc -I/usr/include/libusb-1.0 {fn} -lusb-1.0 -o {fn}.out >/dev/null",
+                shell=True,
+            )
 
     def test_cprinter_win(self):
         usbrply.printers.run(
@@ -203,9 +193,9 @@ class TestCore(TestCommon):
 
         if os.getenv("USBRPLY_TEST_ALL") == "Y":
             subprocess.check_call(
-                "gcc -I/usr/include/libusb-1.0 %s -lusb-1.0 -o %s.out >/dev/null"
-                % (fn, fn),
-                shell=True)
+                f"gcc -I/usr/include/libusb-1.0 {fn} -lusb-1.0 -o {fn}.out >/dev/null",
+                shell=True,
+            )
 
     """
     *************************************************************************
@@ -315,19 +305,17 @@ def data_serj2usbj(serj_data):
 
 
 def tx_string_data(serj):
-    ret = ""
-    for data in serj["data"]:
-        if data["type"] == "write":
-            ret += util.tostr(binascii.unhexlify(data["data"]))
-    return ret
+    return "".join(
+        util.tostr(binascii.unhexlify(data["data"]))
+        for data in serj["data"]
+        if data["type"] == "write"
+    )
 
 
 def tx_string_adata(serj):
-    ret = ""
-    for data in serj["data"]:
-        if data["type"] == "write":
-            ret += data["adata"]
-    return ret
+    return "".join(
+        data["adata"] for data in serj["data"] if data["type"] == "write"
+    )
 
 
 class TestSerial(TestCommon):

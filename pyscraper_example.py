@@ -20,11 +20,7 @@ class Scraper:
         # Translate to higher level function
         if d["type"] == "controlRead" and d["bRequest"] == 0x02:
             indented("vendor_request1()")
-        # Ignore bulk reads
-        elif d["type"] == "bulkRead":
-            pass
-        # Default: print as normal python replay
-        else:
+        elif d["type"] != "bulkRead":
             self.pyprint.parse_data(d)
 
     def run(self, j):
@@ -39,7 +35,7 @@ class Scraper:
 def load_json(fin, usbrply=""):
     if fin.find('.cap') >= 0 or fin.find('.pcapng') >= 0:
         json_fn = '/tmp/scrape.json'
-        cmd = 'usbrply %s --json %s >%s' % (usbrply, fin, json_fn)
+        cmd = f'usbrply {usbrply} --json {fin} >{json_fn}'
         subprocess.check_call(cmd, shell=True)
     else:
         json_fn = fin

@@ -26,8 +26,7 @@ def pcap2json_prepare(fn, argsj={}):
         "win-pcap": win_pcap.Gen,
         "win-pcapng": win_pcap.Gen,
     }[parser]
-    gen = cls(fn, argsj)
-    return gen
+    return cls(fn, argsj)
 
 def pcap2json(fn, argsj={}):
     gen = pcap2json_prepare(fn, argsj)

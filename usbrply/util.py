@@ -63,19 +63,15 @@ def add_bool_arg(parser, yes_arg, default=False, **kwargs):
                         default=default,
                         **kwargs)
     kwargs['help'] = 'Disable above'
-    parser.add_argument('--no-' + dashed,
-                        dest=dest,
-                        action='store_false',
-                        **kwargs)
+    parser.add_argument(
+        f'--no-{dashed}', dest=dest, action='store_false', **kwargs
+    )
 
 
 # In Python2 bytes_data is a string, in Python3 it's bytes.
 # The element type is different (string vs int) and we have to deal
 # with that when printing this number as hex.
-if sys.version_info[0] == 2:
-    myord = ord
-else:
-    myord = lambda x: x
+myord = ord if sys.version_info[0] == 2 else (lambda x: x)
 
 
 def tobytes(buff):
@@ -111,7 +107,7 @@ def to_pintable_str(buff):
 def load_pcap_json(fin, usbrply_args=""):
     if fin.find('.cap') >= 0 or fin.find('.pcapng') >= 0:
         json_fn = '/tmp/scrape.json'
-        cmd = 'usbrply %s  --json %s >%s' % (usbrply_args, fin, json_fn)
+        cmd = f'usbrply {usbrply_args}  --json {fin} >{json_fn}'
         subprocess.check_call(cmd, shell=True)
     else:
         json_fn = fin
@@ -135,16 +131,16 @@ def validate_json(j, prefix="top"):
         return True
     elif type(j) in (OrderedDict, dict):
         for k, v in j.items():
-            ok = validate_json(k, prefix=prefix + " key")
+            ok = validate_json(k, prefix=f"{prefix} key")
             ret = ok and ret
             if ok:
-                ret = validate_json(v, prefix=prefix + "[m %s]" % k) and ret
+                ret = validate_json(v, prefix=f"{prefix}[m {k}]") and ret
     elif type(j) in (tuple, list):
         for vi, v in enumerate(j):
             ret = validate_json(v, prefix=prefix + "[l %u]" % vi) and ret
         return True
     else:
-        print("json @ %s: unexpected type %s" % (prefix, type(j)))
+        print(f"json @ {prefix}: unexpected type {type(j)}")
         return False
     return ret
 
@@ -155,10 +151,7 @@ def hex_jdata(jdata):
     Convert them back for storage
     """
     if type(jdata) in (dict, OrderedDict):
-        ret = {}
-        for k, v in jdata.items():
-            ret[k] = hex_jdata(v)
-        return ret
+        return {k: hex_jdata(v) for k, v in jdata.items()}
     elif type(jdata) in (list, tuple):
         for vi, v in enumerate(jdata):
             jdata[vi] = hex_jdata(v)
